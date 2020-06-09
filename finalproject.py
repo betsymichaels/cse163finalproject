@@ -3,56 +3,62 @@
 """
 
 import pandas as pd
-from sklearn.tree import DecisionTreeClassifier
-from sklearn.metrics import accuracy_score
-from sklearn.model_selection import train_test_split
 # import altair as alt
 
 
-def problem2(data):
+def most_common_10(data):
     """
     Takes in the app data and prints the top 10 most common races,
     the top 10 most common classes, and the top 10 most common
     race+class combinations.
     """
     class_race = data[['processedRace', 'justClass']].copy()
+    class_race = class_race.dropna()
+    # creating a column to help sum up the number of same objects
     class_race['Total'] = 1
+    # removing multiclasses into their own dataframe
     mask = class_race['justClass'].str.contains('|', regex=False)
     multiclassed = class_race[mask].copy()
     not_multiclassed = class_race[~mask].copy()
+    # creating dataframes to group and sort by most to least
+    # common race, class, and multiclass
     class_df = not_multiclassed[['justClass', 'Total']]
     race_df = class_race[['processedRace', 'Total']]
-    class_df = class_df.dropna()
     multiclass_df = multiclassed[['justClass', 'Total']]
-    race_df = race_df.dropna()
     grouped_race = race_df.groupby('processedRace')['Total'].sum()
     grouped_class = class_df.groupby('justClass')['Total'].sum()
     grouped_multiclass = multiclass_df.groupby('justClass')['Total'].sum()
     sorted_race = grouped_race.sort_values(ascending=False)
     sorted_class = grouped_class.sort_values(ascending=False)
     sorted_multi = grouped_multiclass.sort_values(ascending=False)
+    # creating a new column with combined class and race, to find
+    # the top 10 race/class combinations
     not_multiclassed['class_race'] = (class_race['justClass'] +
                                       class_race['processedRace'])
     grouped_cr = not_multiclassed.groupby('class_race')['Total'].sum()
     sorted_class_race = grouped_cr.sort_values(ascending=False)
+    # printing results(this was for debugging, going to have to return
+    # these dataframes in the final product)
     print(sorted_race.nlargest(10, keep='first'))
     print(sorted_class.nlargest(10, keep='first'))
     print(sorted_class_race.nlargest(10, keep='first'))
     print(sorted_multi.nlargest(10, keep='first'))
 
 
-def problem3(data):
+def character_build(data):
     """
     Takes in app data and prints the most common character build by:
     race, class with multiclasses removed, background, and alignment.
-    Also prints the same as above,  but with multiclasses instead of
+    Also prints the most common character build with multiclasses instead of
     single classes.
     Also prints most common race, class, background, and alignment.
     """
     filter_down = data[['justClass', 'processedRace', 'processedAlignment',
                         'background']].copy()
+    # creating a column to help sum up the number of same objects
     filter_down['Total'] = 1
     filter_down.dropna()
+    # removing multiclasses into their own dataframe
     mask = filter_down['justClass'].str.contains('|', regex=False)
     multiclassed = filter_down[mask].copy()
     not_multiclassed = filter_down[~mask].copy()
@@ -60,6 +66,8 @@ def problem3(data):
     race_df = not_multiclassed[['processedRace', 'Total']]
     backgrnd_df = not_multiclassed[['background', 'Total']]
     align_df = not_multiclassed[['processedAlignment', 'Total']]
+    # creating a column for combined character build, with and without
+    # multiclassing
     not_multiclassed['combination'] = (not_multiclassed['justClass'] +
                                        not_multiclassed['processedRace'] +
                                        not_multiclassed['background'] +
@@ -68,6 +76,8 @@ def problem3(data):
                                    multiclassed['processedRace'] +
                                    multiclassed['background'] +
                                    multiclassed['processedAlignment'])
+    # using groupby and sorting to find the most common character builds,
+    # both by the combination of traits, and individually for each trait.
     grouped_combo = not_multiclassed.groupby('combination')['Total'].sum()
     grouped_comboclass = multiclassed.groupby('combination')['Total'].sum()
     grouped_race = race_df.groupby('processedRace')['Total'].sum()
@@ -80,6 +90,8 @@ def problem3(data):
     sorted_align = grouped_align.sort_values(ascending=False)
     sorted_combo = grouped_combo.sort_values(ascending=False)
     sorted_comboclass = grouped_comboclass.sort_values(ascending=False)
+    # printing results(this was for debugging, going to have to return
+    # these dataframes in the final product)
     print('Most Common Character Build:', sorted_combo.nlargest(1,
                                                                 keep='first'))
     print('Most Common Multiclass Character Build:',
@@ -90,39 +102,52 @@ def problem3(data):
     print('Most Common Alignment:', sorted_align.nlargest(1, keep='first'))
 
 
-def problem4(data):
+def top_3_distribution(data, race):
     """
-    This is the machine learning model that doesn't really work
+    Takes in app data and a race(as a string), prints the top
+    3 classes, backgrounds, and alignments for that race.
     """
-    data = data[['justClass', 'background', 'processedAlignment',
-                 'processedRace']].copy()
-    data = data.dropna()
-    mask = data['justClass'].str.contains('|', regex=False)
-    not_multiclassed = data[~mask].copy()
-    features = not_multiclassed[['justClass', 'background',
-                                 'processedAlignment']]
-    features = pd.get_dummies(features)
-    labels = not_multiclassed['processedRace']
-    features_train, features_test, labels_train, labels_test = \
-        train_test_split(features, labels, test_size=0.2)
-    model = DecisionTreeClassifier()
-    model.fit(features_train, labels_train)
-    label_predictions = model.predict(features_test)
-    label_predictions2 = model.predict(features_train)
-    print('Test Accuracy:', accuracy_score(labels_test, label_predictions))
-    print('Training Accuracy:', accuracy_score(labels_train,
-                                               label_predictions2))
+    df = data[['processedRace', 'justClass', 'background',
+               'processedAlignment']].copy()
+    # creating a column to help sum up the number of same objects
+    df['Total'] = 1
+    # filtering down to just the race specified in the parameters
+    select_race = df[df['processedRace'] == race]
+    # finding the most common classes, backgrounds, and alignments
+    # for that race
+    class_df = select_race[['justClass', 'Total']]
+    bckgrnd_df = select_race[['background', 'Total']]
+    align_df = select_race[['processedAlignment', 'Total']]
+    grouped_class = class_df.groupby('justClass')['Total'].sum()
+    grouped_backgrnd = bckgrnd_df.groupby('background')['Total'].sum()
+    grouped_align = align_df.groupby('processedAlignment')['Total'].sum()
+    sorted_class = grouped_class.sort_values(ascending=False)
+    sorted_backgrnd = grouped_backgrnd.sort_values(ascending=False)
+    sorted_align = grouped_align.sort_values(ascending=False)
+    # printing results(this was for debugging, going to have to return
+    # these dataframes in the final product)
+    print('Top 3', race, 'Classes:',
+          sorted_class.nlargest(3, keep='first'))
+    print('Top 3', race, 'Backgrounds:',
+          sorted_backgrnd.nlargest(3, keep='first'))
+    print('Top 3', race, 'Alignments:',
+          sorted_align.nlargest(3, keep='first'))
 
 
-def problem2survey(data):
+def most_common_10_survey(data):
     """
-    Same as other problem 2, but uses survey data.
+    Same as other most_common_10, but uses survey data.
     """
     class_race = data[['race', 'class']].copy()
+    class_race = class_race.dropna()
+    # creating a column to help sum up the number of same objects
     class_race['Total'] = 1
+    # removing multiclasses into their own dataframe
     mask = class_race['class'].str.contains(';', regex=False)
     multiclassed = class_race[mask].copy()
     not_multiclassed = class_race[~mask].copy()
+    # creating dataframes to group and sort by most to least
+    # common race, class, and multiclass
     class_df = not_multiclassed[['class', 'Total']]
     race_df = class_race[['race', 'Total']]
     class_df = class_df.dropna()
@@ -134,19 +159,23 @@ def problem2survey(data):
     sorted_race = grouped_race.sort_values(ascending=False)
     sorted_class = grouped_class.sort_values(ascending=False)
     sorted_multi = grouped_multiclass.sort_values(ascending=False)
+    # creating a new column with combined class and race, to find
+    # the top 10 race/class combinations
     not_multiclassed['class_race'] = (class_race['class'] +
                                       class_race['race'])
     grouped_cr = not_multiclassed.groupby('class_race')['Total'].sum()
     sorted_class_race = grouped_cr.sort_values(ascending=False)
+    # printing results(this was for debugging, going to have to return
+    # these dataframes in the final product)
     print(sorted_race.nlargest(10, keep='first'))
     print(sorted_class.nlargest(10, keep='first'))
     print(sorted_class_race.nlargest(10, keep='first'))
     print(sorted_multi.nlargest(10, keep='first'))
 
 
-def problem3survey(data):
+def character_build_survey(data):
     """
-    Same as other problem 3, but with survey data.
+    Same as other character_build function, but with survey data.
     """
     filter_down = data[['class', 'race', 'alignment',
                         'background']].copy()
@@ -177,6 +206,8 @@ def problem3survey(data):
     sorted_align = grouped_align.sort_values(ascending=False)
     sorted_combo = grouped_combo.sort_values(ascending=False)
     sorted_comboclass = grouped_comboclass.sort_values(ascending=False)
+    # printing results(this was for debugging, going to have to return
+    # these dataframes in the final product)
     print('Most Common Character Build:', sorted_combo.nlargest(1,
                                                                 keep='first'))
     print('Most Common Multiclass Character Build:',
@@ -187,36 +218,18 @@ def problem3survey(data):
     print('Most Common Alignment:', sorted_align.nlargest(1, keep='first'))
 
 
-def problem4survey(data):
+def top_3_distribution_survey(data, race):
     """
-    Same as other problem 4, but with app data.
-    """
-    data = data[['class', 'alignment', 'race']].copy()
-    data = data.dropna()
-    mask = data['class'].str.contains(';', regex=False)
-    multiclassed = data[mask].copy()
-    features = multiclassed[['class', 'alignment']]
-    features = pd.get_dummies(features)
-    labels = multiclassed['race']
-    features_train, features_test, labels_train, labels_test = \
-        train_test_split(features, labels, test_size=0.2)
-    model = DecisionTreeClassifier()
-    model.fit(features_train, labels_train)
-    label_predictions = model.predict(features_test)
-    label_predictions2 = model.predict(features_train)
-    print('Test Accuracy:', accuracy_score(labels_test, label_predictions))
-    print('Training Accuracy:', accuracy_score(labels_train,
-                                               label_predictions2))
-
-
-def problem4actual(data, race):
-    """
-    Takes in app data and a race(as a string), prints the top
+    Takes in survey data and a race(as a string), prints the top
     3 classes, backgrounds, and alignments for that race.
     """
     df = data[['race', 'class', 'background', 'alignment']].copy()
+    # creating a column to help sum up the number of same objects
     df['Total'] = 1
+    # filtering down to just the race specified in the parameters
     select_race = df[df['race'] == race]
+    # finding the most common classes, backgrounds, and alignments
+    # for that race
     class_df = select_race[['class', 'Total']]
     bckgrnd_df = select_race[['background', 'Total']]
     align_df = select_race[['alignment', 'Total']]
@@ -226,6 +239,8 @@ def problem4actual(data, race):
     sorted_class = grouped_class.sort_values(ascending=False)
     sorted_backgrnd = grouped_backgrnd.sort_values(ascending=False)
     sorted_align = grouped_align.sort_values(ascending=False)
+    # printing results(this was for debugging, going to have to return
+    # these dataframes in the final product)
     print('Top 3', race, 'Classes:',
           sorted_class.nlargest(3, keep='first'))
     print('Top 3', race, 'Backgrounds:',
@@ -235,10 +250,13 @@ def problem4actual(data, race):
 
 
 def main():
-    file1 = '/Users/elisabethclithero/Downloads/finalproject/uniqueTable.tsv'
-    file2 = '/Users/elisabethclithero/Downloads/finalproject/5thedsurvey.txt'
-    data1 = pd.read_table(file1)
+    file1 = '/Users/elisabethclithero/Downloads/finalproject/app_' \
+            'data_processed.txt'
+    file2 = '/Users/elisabethclithero/Downloads/finalproject/survey_' \
+            'data_processed.txt'
+    data1 = pd.read_csv(file1)
     data2 = pd.read_csv(file2)
+    # renaming columns in the survey data
     data2 = data2.rename(columns={"What Is Your Character's Class? (If your " +
                                   "character multi-classed, select all that " +
                                   "apply)": "class", "What is your " +
@@ -250,15 +268,17 @@ def main():
                                   "D&D 5th edition supplementary product " +
                                   "besides the PHB, otherwise just pick " +
                                   "custom)": "background"})
-    problem2(data1)
-    problem3(data1)
-    problem4(data1)
-    problem2survey(data2)
-    problem3survey(data2)
-    problem4survey(data2)
-    problem4actual(data2, 'Human')
-    problem4actual(data2, 'Dwarf')
-    problem4actual(data2, 'Dragonborn')
+    # calling the functions
+    most_common_10(data1)
+    character_build(data1)
+    top_3_distribution(data1, 'Human')
+    top_3_distribution(data1, 'Dwarf')
+    top_3_distribution(data1, 'Dragonborn')
+    most_common_10_survey(data2)
+    character_build_survey(data2)
+    top_3_distribution_survey(data2, 'Human')
+    top_3_distribution_survey(data2, 'Dwarf')
+    top_3_distribution_survey(data2, 'Dragonborn')
 
 
 if __name__ == '__main__':
