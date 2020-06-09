@@ -3,9 +3,9 @@
 """
 
 import pandas as pd
-#from sklearn.tree import DecisionTreeClassifier
-#from sklearn.metrics import accuracy_score
-#from sklearn.model_selection import train_test_split
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.metrics import accuracy_score
+from sklearn.model_selection import train_test_split
 # import altair as alt
 
 
@@ -235,8 +235,8 @@ def problem4actual(data, race):
 
 
 def main():
-    file1 = 'uniqueTable.tsv'
-    file2 = 'survey_data_processed.csv'
+    file1 = '/Users/elisabethclithero/Downloads/finalproject/uniqueTable.tsv'
+    file2 = '/Users/elisabethclithero/Downloads/finalproject/5thedsurvey.txt'
     data1 = pd.read_table(file1)
     data2 = pd.read_csv(file2)
     data2 = data2.rename(columns={"What Is Your Character's Class? (If your " +
