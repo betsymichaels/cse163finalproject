@@ -1,5 +1,7 @@
 import re
 import pandas as pd
+
+from dnd_model import DnDModel
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
@@ -17,7 +19,14 @@ class DungeonsAndData:
 
     def _filter_level(self, min_level=1, max_level=20):
         """
+        Takes a minimum number (min_level) and a maximum
+        number (max_level) and returns a DataFrame of all
+        rows in the DataFrame this class represents for
+        which the level of that row falls between
+        min_level (inclusive) and max_level(inclusive)
 
+        if no min_level is provided, it defaults to 1
+        if no max_level is provided, it defaults to 20
         """
         low_level = self._data['level'] >= min_level
         high_level = self._data['level'] <= max_level
@@ -25,7 +34,11 @@ class DungeonsAndData:
 
     def predict_from_stats(self, label_type, min_level=1, max_level=20):
         """
-
+        Takes the name of a column in the DataFrame (lable_type) and creates
+        a machine learning model that uses character stats (Hp, Ac, Strenght,
+        dexterity, constitution, intelligence, wisdom, and charisma) to predict
+        the coresponding data in lable_type and returns a DnDModel that stores
+        the machine learning model along with other information about it
         """
         data = self._filter_level(min_level, max_level)
 
@@ -39,17 +52,23 @@ class DungeonsAndData:
         features_train, features_test, labels_train, labels_test = \
             train_test_split(features, labels, test_size=0.3)
 
-        model = DecisionTreeClassifier(min_samples_leaf=3)
+        model = DecisionTreeClassifier(min_samples_leaf=3, max_depth=10)
         model.fit(features_train, labels_train)
 
         pred_test = model.predict(features_test)
         test_acc = accuracy_score(labels_test, pred_test)
-        return test_acc
+
+        stat_model = DnDModel(model, label_type, test_acc)
+        return stat_model
 
     def _char_ratio(self, name, letters, spec_case=None,
                     cons=False, vow=False):
         """
+        Takes a string (string) and a set of letters (letters)
+        and returns the ratio of letters in letters that appear
+        in the string
 
+        if there are no valid chara
         """
         if spec_case is None:
             spec_case = {}
@@ -148,19 +167,22 @@ class DungeonsAndData:
         labels = name_data[label_type]
 
         features_train, features_test, labels_train, labels_test = \
-            train_test_split(features, labels, test_size=0.2)
+            train_test_split(features, labels, test_size=0.3)
 
         model = DecisionTreeClassifier()
         model.fit(features_train, labels_train)
 
         pred_test = model.predict(features_test)
         test_acc = accuracy_score(labels_test, pred_test)
-        return test_acc
 
-    def label_accuracy_from_stats(self, model, class_name, col='class',
+        name_model = DnDModel(model, test_acc)
+        return name_model
+
+    def label_accuracy_from_stats(self, model, class_name, col,
                                   min_level=1, max_level=20):
         """
-
+        if no min_level is provided, it defaults to 1
+        if no max_level is provided, it defaults to 20
         """
         data = self._filter_level(min_level, max_level)
 
@@ -212,3 +234,23 @@ class DungeonsAndData:
         for column in data:
             data[column] = data[column].apply(lambda x: round(x))
         return data
+
+    def percent_top_ten(self, column_name):
+        """
+        Takes in the app data and prints the top 10 most common races,
+        the top 10 most common classes, and the top 10 most common
+        race+class combinations.
+        """
+        column = self._data[column_name]
+        column = column.dropna()
+
+        counts = column.value_counts()
+        counts = counts.nlargest(10)
+
+        counts= counts.to_frame()
+        return counts
+
+        
+
+        
+
