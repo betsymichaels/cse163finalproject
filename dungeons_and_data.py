@@ -214,6 +214,9 @@ class DungeonsAndData:
         return prediction
 
     def label_from_name(self, model, name):
+        """
+
+        """
         name_dict = {'name': {0: name}}
 
         data = pd.DataFrame.from_dict(name_dict)
@@ -249,8 +252,3 @@ class DungeonsAndData:
 
         counts= counts.to_frame()
         return counts
-
-        
-
-        
-
