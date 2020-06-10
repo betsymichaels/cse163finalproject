@@ -2,14 +2,14 @@ class DnDModel:
     """
 
     """
-    def __init__(self, model, lable_type, test_acc=None, train_acc=None):
+    def __init__(self, model, label_type, test_acc=None, train_acc=None):
         """
 
         if test_acc is not specified, it defaults to None
         if train_acc is not specified, it defaults to None
         """
         self._model = model
-        self._label_type = _lable_type
+        self._label_type = label_type
         self._test_acc = test_acc
         self._train_acc = train_acc
 

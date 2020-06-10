@@ -16,6 +16,15 @@ class DungeonsAndData:
 
         """
         self._data = data
+    
+    def drop_low_frequency(self, label_type, min_frequency):
+        """
+
+        """
+        low_frequency = self._data['processedRace'].map(self._data[label_type]
+                                                        .value_counts()) <= 20
+        filtered = self._data[~low_frequency]
+        return filtered
 
     def _filter_level(self, min_level=1, max_level=20):
         """
@@ -32,13 +41,17 @@ class DungeonsAndData:
         high_level = self._data['level'] <= max_level
         return self._data[low_level & high_level]
 
-    def predict_from_stats(self, label_type, min_level=1, max_level=20):
+    def predict_from_stats(self, label_type, min_level=1, max_level=20,
+                           min_frequency=0):
         """
         Takes the name of a column in the DataFrame (lable_type) and creates
         a machine learning model that uses character stats (Hp, Ac, Strenght,
         dexterity, constitution, intelligence, wisdom, and charisma) to predict
         the coresponding data in lable_type and returns a DnDModel that stores
         the machine learning model along with other information about it
+
+        if no min_level is provided, it defaults to 1
+        if no max_level is provided, it defaults to 20
         """
         data = self._filter_level(min_level, max_level)
 
@@ -65,10 +78,18 @@ class DungeonsAndData:
                     cons=False, vow=False):
         """
         Takes a string (string) and a set of letters (letters)
-        and returns the ratio of letters in letters that appear
-        in the string
+        and returns the ratio of letters in letters to
+        other valid characters that appear in the string
 
-        if there are no valid chara
+        a character is considered invalid if vow is true and
+        it is not a vowel, cons is true and it is not a consonant,
+        or it is listed as a special case
+
+        if spec_case is not defined, it defaults to None
+        if cons is not defined, it defaults to False
+        if vow is not defined, if defaults to False
+
+        if there are no valid characters, returns 0
         """
         if spec_case is None:
             spec_case = {}
@@ -153,7 +174,7 @@ class DungeonsAndData:
                                                              'xmnrlwy'),
                                                              cons=True))
 
-    def predict_from_name(self, label_type):
+    def predict_from_name(self, label_type, min_frequency=0):
         """
 
         """
@@ -240,9 +261,9 @@ class DungeonsAndData:
 
     def percent_top_ten(self, column_name):
         """
-        Takes in the app data and prints the top 10 most common races,
-        the top 10 most common classes, and the top 10 most common
-        race+class combinations.
+        Takes in column name (column_name) and returns a data frame containing the 
+        top ten most common items in that column along with the percentage
+        of all items in that colomn they make up
         """
         column = self._data[column_name]
         column = column.dropna()
@@ -250,5 +271,49 @@ class DungeonsAndData:
         counts = column.value_counts()
         counts = counts.nlargest(10)
 
-        counts= counts.to_frame()
+        counts = counts.to_frame('percent')
+        counts[column_name] = counts.index
+        counts['percent'] = counts['percent'] / len(column) * 100
         return counts
+
+    def find_most_common_attribute(self, column_name):
+        """
+        Takes the name of a column (column_name) and returns
+        the most common item to appear in that column
+        """
+        column = self._data[column_name]
+        column = column.dropna()
+
+        counts = column.value_counts()
+        most_common = counts.nlargest(1)
+        return most_common
+
+    def find_most_common_build(self, atributes):
+        """
+        Takes a list of columns (attributes) and returns
+        the most common combination of traits amount those columns
+        """
+        data = self._data.copy()
+        data = data.loc[:, atributes]
+        data['all'] = data.apply(lambda s: s.str.cat(sep=' '), axis=1)
+
+        counts = data['all'].value_counts()
+        most_common = counts.nlargest(1)
+        return most_common
+
+    def top_3_distribution(self, race, race_column, atribute):
+        """
+        Takes a character race as a string (race), column representing data of character
+        races(race_column), and the name of a different column (atribute) and returns
+        a DataFrame of the three most common traits for that race within that column mapped
+        to the percentage of members of that race that have that trait
+        """
+        of_race = self._data[race_column] == race
+        just_race = self._data[just_race]
+        count_attribute = just_race.groupby(atribute).count()
+        top_three = count_attribute.nlargest(3)
+
+        top_three = top_three.to_frame('percent')
+        top_three[atribute] = top_three.index
+        top_three['percent'] = top_three['percent'] / len(column) * 100
+        return top_three
