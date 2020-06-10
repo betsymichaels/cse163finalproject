@@ -35,7 +35,7 @@ def finding_most_common(df, column_name):
     return most_common
 
 
-def character_build(data):
+def character_build_app(data):
     """
     Takes in app data and prints the most common character build by:
     race, class with multiclasses removed, background, and alignment.
@@ -199,8 +199,6 @@ def character_build_survey(data):
     print('Most Common Class:', sorted_class.nlargest(1, keep='first'))
     print('Most Common Background:', sorted_backgrnd.nlargest(1, keep='first'))
     print('Most Common Alignment:', sorted_align.nlargest(1, keep='first'))
-    chart = alt.Chart(data)
-    chart.mark_point().encode()
 
 
 def top_3_distribution_survey(data, race):
@@ -279,7 +277,7 @@ def main():
     # chart = alt.Chart(percent2).mark_bar().encode(x='race',
     #                                              y='percent')
     # chart.save('most_common_10.html')
-    print(character_build(data1))
+    print(character_build_app(data1))
     # top_3_distribution(data1, 'Human')
     # top_3_distribution(data1, 'Dwarf')
     # top_3_distribution(data1, 'Dragonborn')
