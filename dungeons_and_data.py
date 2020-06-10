@@ -9,21 +9,26 @@ from sklearn.model_selection import train_test_split
 
 class DungeonsAndData:
     """
-
+    This class defines an object representing dungeons and dragons
+    character data and impelments methods with which to use,
+    manipulate, and analyze that data
     """
     def __init__(self, data):
         """
-
+        Takes a DataFrame containing Dungeons and Dragons character
+        information and constructs a DungeonsAndData object which
+        keeps track of that DataFrame
         """
         self._data = data
-    
-    def drop_low_frequency(self, label_type, min_frequency):
-        """
 
+    def _drop_low_frequency(self, col, min_freq):
         """
-        low_frequency = self._data['processedRace'].map(self._data[label_type]
-                                                        .value_counts()) <= 20
-        filtered = self._data[~low_frequency]
+        Takes a column name and a minimum frequency (min_freq) and returns
+        a mask of the class DataFrame with all rows for which the data for
+        that column appeard less that the minimum frequency removed
+        """
+        low = self._data[col].map(self._data[col].value_counts()) <= min_freq
+        filtered = self._data[~low]
         return filtered
 
     def _filter_level(self, min_level=1, max_level=20):
@@ -44,16 +49,26 @@ class DungeonsAndData:
     def predict_from_stats(self, label_type, min_level=1, max_level=20,
                            min_frequency=0):
         """
-        Takes the name of a column in the DataFrame (lable_type) and creates
-        a machine learning model that uses character stats (Hp, Ac, Strenght,
-        dexterity, constitution, intelligence, wisdom, and charisma) to predict
-        the coresponding data in lable_type and returns a DnDModel that stores
-        the machine learning model along with other information about it
+        Takes the name of a column in the DataFrame (lable_type) and
+        createsa machine learning model that uses character stats
+        (Hp, Ac, strenght, dexterity, constitution, intelligence, wisdom,
+        and charisma) to predict the coresponding data in lable_type and
+        returns a DnDModel that stores the machine learning model along with
+        other information about it
+
+        min_frequency is the minimum amount of occurences a label has to have
+        to be included in the test/training data
+        only anylizes data with levels from min_level(inclusive) - max_level
+        (inclusive)
 
         if no min_level is provided, it defaults to 1
         if no max_level is provided, it defaults to 20
+        if no min_frequency is provided, it defaults to 0
         """
         data = self._filter_level(min_level, max_level)
+
+        if min_frequency > 0:
+            data = data._drop_low_frequency(label_type, min_frequency)
 
         data = data.loc[:, [label_type, 'HP', 'AC', 'Str', 'Dex',
                         'Con', 'Int', 'Wis', 'Cha']]
@@ -119,7 +134,9 @@ class DungeonsAndData:
 
     def _generate_name_data(self, data):
         """
-
+        Takes a DataFrame (data) and uses IPA classifications to generate
+        numerical data by analyzing letters in the names stored in that
+        DataFrame
         """
         data['vow ratio'] = data['name'].apply(lambda s:
                                                self._char_ratio(s.lower(),
@@ -170,16 +187,27 @@ class DungeonsAndData:
         data['voiced'] = data['name'].apply(lambda s:
                                             self._char_ratio(s.lower(),
                                                              set('dgzbvj'),
-                                                             spec_case=set('' +
-                                                             'xmnrlwy'),
+                                                             spec_case=set(''
+                                                             + 'xmnrlwy'),
                                                              cons=True))
 
     def predict_from_name(self, label_type, min_frequency=0):
         """
+        Takes the name of a column in the DataFrame (lable_type) and
+        creates a machine learning model that uses atributes of a character's
+        name to predict the coresponding data in lable_type and returns a
+        DnDModel from that algorithm
 
+        min_frequency is the minimum amount of occurences a label has to
+        have to be included in the test/training data
+        if no min_frequency is provided, it defaults to 0
         """
         name_data = self._data[['name', label_type]]
         name_data = name_data.dropna()
+
+        if min_frequency > 0:
+            name_data = name_data._drop_low_frequency(label_type,
+                                                      min_frequency)
 
         self._generate_name_data(name_data)
         name_data = name_data.loc[:, name_data.columns != 'name']
@@ -196,12 +224,20 @@ class DungeonsAndData:
         pred_test = model.predict(features_test)
         test_acc = accuracy_score(labels_test, pred_test)
 
-        name_model = DnDModel(model, test_acc)
+        name_model = DnDModel(model, label_type, test_acc)
         return name_model
 
-    def label_accuracy_from_stats(self, model, class_name, col,
+    def label_accuracy_from_stats(self, dnd_model, class_name, col,
                                   min_level=1, max_level=20):
         """
+        Takes in a DnDModel (dnd_model), the name of a paricular classifier
+        (class name) and the column it would be found it (col) and returns
+        a the accuracy score with wich the model is able to predict
+        members of that classifier
+
+        only anylizes data with levels from min_level(inclusive) to
+        max_level (inclusive)
+
         if no min_level is provided, it defaults to 1
         if no max_level is provided, it defaults to 20
         """
@@ -217,26 +253,32 @@ class DungeonsAndData:
         labels = df_class[col]
         features = df_class.loc[:, df_class.columns != col]
 
-        class_pred = model.predict(features)
+        class_pred = dnd_model.predict(features)
         class_acc = accuracy_score(labels, class_pred)
 
         return class_acc
 
-    def label_from_stat_block(self, model, stat_block):
+    def label_from_stat_block(self, dnd_model, stat_block):
         """
-
+        Takes a DnDModel, which contains an algorithm made to predict a
+        particular type of classifier, and a list of stats for a dnd character
+        in the order: 'AC', 'HP', 'Str', 'Dex', 'Con', 'Int', 'Wis', 'Cha'
+        and predicts the clasifier of that type for a character with those
+         stats
         """
         stat_row = dict()
         for stat in stat_block:
             stat_row[stat] = {0: stat_block[stat]}
 
         data = pd.DataFrame.from_dict(stat_row)
-        prediction = model.predict(data)
+        prediction = dnd_model.predict(data)
         return prediction
 
-    def label_from_name(self, model, name):
+    def label_from_name(self, dnd_model, name):
         """
-
+        Takes a dnd_model, which contains an algorithm made to predict a
+        particular type of classifier, and a character name and predicts
+        the clasifier of that type for a character with that name
         """
         name_dict = {'name': {0: name}}
 
@@ -245,25 +287,14 @@ class DungeonsAndData:
 
         features = data.loc[:, data.columns != 'name']
 
-        prediction = model.predict(features)
+        prediction = dnd_model.predict(features)
         return prediction
-
-    def mean_stats_per_classifier(self, class_type, min_level=1, max_level=20):
-        """
-
-        """
-        data = self._filter_level(min_level, max_level)
-        data = data.groupby(class_type).mean()
-        data = data.loc[:, 'HP':'Cha']
-        for column in data:
-            data[column] = data[column].apply(lambda x: round(x))
-        return data
 
     def percent_top_ten(self, column_name):
         """
-        Takes in column name (column_name) and returns a data frame containing the 
-        top ten most common items in that column along with the percentage
-        of all items in that colomn they make up
+        Takes in column name (column_name) and returns a DataFrame
+        containing the top ten most common items in that column along
+        with the percentage of all items in that column they make up
         """
         column = self._data[column_name]
         column = column.dropna()
@@ -303,17 +334,18 @@ class DungeonsAndData:
 
     def top_3_distribution(self, race, race_column, atribute):
         """
-        Takes a character race as a string (race), column representing data of character
-        races(race_column), and the name of a different column (atribute) and returns
-        a DataFrame of the three most common traits for that race within that column mapped
-        to the percentage of members of that race that have that trait
+        Takes a character race as a string (race), column representing data
+        of character races(race_column), and the name of a different column
+        (atribute) and returns a DataFrame of the three most common traits for
+        that race within that column mapped to the percentage of members of
+        that race that have that trait
         """
         of_race = self._data[race_column] == race
-        just_race = self._data[just_race]
+        just_race = self._data[of_race]
         count_attribute = just_race.groupby(atribute).count()
         top_three = count_attribute.nlargest(3)
 
         top_three = top_three.to_frame('percent')
         top_three[atribute] = top_three.index
-        top_three['percent'] = top_three['percent'] / len(column) * 100
+        top_three['percent'] = top_three['percent'] / len(just_race) * 100
         return top_three
