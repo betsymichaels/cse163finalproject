@@ -21,11 +21,18 @@ class DungeonsAndData:
         """
         self._data = data
 
-    def _drop_low_frequency(self, col, min_freq):
+    def get_data(self):
         """
-        Takes a column name and a minimum frequency (min_freq) and returns
-        a mask of the class DataFrame with all rows for which the data for
-        that column appeard less that the minimum frequency removed
+        Returns the DataFrame of dnd character information
+        """
+        return self._data
+
+    def _drop_low_frequency(self, data, col, min_freq):
+        """
+        Takes a column name and a minimum frequency (min_freq) and
+        DataFrame (data) and returns a mask of that data with all rows
+        for which the data for that column appeard less that the minimum frequency
+        removed
         """
         low = self._data[col].map(self._data[col].value_counts()) <= min_freq
         filtered = self._data[~low]
@@ -68,7 +75,7 @@ class DungeonsAndData:
         data = self._filter_level(min_level, max_level)
 
         if min_frequency > 0:
-            data = data._drop_low_frequency(label_type, min_frequency)
+            data = self._drop_low_frequency(data, label_type, min_frequency)
 
         data = data.loc[:, [label_type, 'HP', 'AC', 'Str', 'Dex',
                         'Con', 'Int', 'Wis', 'Cha']]
@@ -206,8 +213,8 @@ class DungeonsAndData:
         name_data = name_data.dropna()
 
         if min_frequency > 0:
-            name_data = name_data._drop_low_frequency(label_type,
-                                                      min_frequency)
+            name_data = self._drop_low_frequency(name_data, label_type,
+                                            min_frequency)
 
         self._generate_name_data(name_data)
         name_data = name_data.loc[:, name_data.columns != 'name']

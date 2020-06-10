@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    .error {
+        color: red;
+    }
+  </style>
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm//vega@5"></script>
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm//vega-lite@4.8.1"></script>
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm//vega-embed@6"></script>
+</head>
+<body>
+  <div id="vis"></div>
+  <script>
+    (function(vegaEmbed) {
+      var spec = {"config": {"view": {"continuousWidth": 400, "continuousHeight": 300}}, "data": {"name": "data-feb5ad09be3e4dd2d6dacf60d1e3ecdf"}, "mark": "bar", "encoding": {"x": {"type": "nominal", "field": "source"}, "y": {"type": "quantitative", "field": "accuracy"}}, "$schema": "https://vega.github.io/schema/vega-lite/v4.8.1.json", "datasets": {"data-feb5ad09be3e4dd2d6dacf60d1e3ecdf": [{"source": "appjustClass", "accuracy": 6.9561403508771935, "min": 0.42105263157894735, "max": 0.5263157894736842}, {"source": "appprocessedRace", "accuracy": 3.944954128440367, "min": 0.19724770642201836, "max": 0.30275229357798167}, {"source": "surveyclass", "accuracy": 6.106719367588933, "min": 0.3241106719367589, "max": 0.4624505928853755}, {"source": "surveyrace", "accuracy": 2.183673469387755, "min": 0.12244897959183673, "max": 0.17687074829931973}]}};
+      var embedOpt = {"mode": "vega-lite"};
+
+      function showError(el, error){
+          el.innerHTML = ('<div class="error" style="color:red;">'
+                          + '<p>JavaScript Error: ' + error.message + '</p>'
+                          + "<p>This usually means there's a typo in your chart specification. "
+                          + "See the javascript console for the full traceback.</p>"
+                          + '</div>');
+          throw error;
+      }
+      const el = document.getElementById('vis');
+      vegaEmbed("#vis", spec, embedOpt)
+        .catch(error => showError(el, error));
+    })(vegaEmbed);
+
+  </script>
+</body>
+</html>
