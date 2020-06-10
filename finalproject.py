@@ -4,6 +4,7 @@
 
 import pandas as pd
 import altair as alt
+import altair_saver as save
 
 
 def percent_top_ten(data, column_name):
@@ -19,9 +20,16 @@ def percent_top_ten(data, column_name):
     counts = counts.to_frame('percent')
     counts[column_name] = counts.index
     counts['percent'] = counts['percent'] / len(column) * 100
+    # input_dropdown = alt.binding_select(options=['race', 'class',
+    #                                             'class_race'])
+    # selection = alt.selection_single(fields=['Origin'], bind=input_dropdown,
+    #                                 name=column_name)
+    # chart = alt.Chart(counts).mark_bar().encode(x=column_name,
+    #                                           y='percent',
+    #                                           tooltip='Name:N'
+    #                                           ).add_selection(selection)
+    # chart.save("chart.png")
     return counts
-    # chart = alt.Chart(counts).mark_bar().encode()
-    # chart.save('most_common_10.html')
 
 
 def finding_most_common(df, column_name):
@@ -75,10 +83,6 @@ def character_build_app(data):
     print('Most Common Class:', common_class)
     print('Most Common Background:', common_backgrnd)
     print('Most Common Alignment:', common_align)
-    result = pd.concat([common_build + common_multi + common_race +
-                        common_class, common_backgrnd + common_align],
-                       ignore_index=True)
-    return result
 
 
 def top_3_distribution(data, race):
@@ -235,10 +239,10 @@ def top_3_distribution_survey(data, race):
 
 
 def main():
-    file1 = '/Users/elisabethclithero/Downloads/finalproject/app_' \
-            'data_processed.txt'
-    file2 = '/Users/elisabethclithero/Downloads/finalproject/survey_' \
-            'data_processed.txt'
+    file1 = '/Users/elisabethclithero/School/cse163finalproject/app_' \
+            'data_processed.csv'
+    file2 = '/Users/elisabethclithero/School/cse163finalproject/survey_' \
+            'data_processed.csv'
     data1 = pd.read_csv(file1)
     data2 = pd.read_csv(file2)
     # renaming columns in the survey data
@@ -254,23 +258,36 @@ def main():
                                   "besides the PHB, otherwise just pick " +
                                   "custom)": "background"})
     # calling the functions
-    print(percent_top_ten(data1, 'processedRace'))
+    percent1 = percent_top_ten(data1, 'processedRace')
     print()
-    print(percent_top_ten(data2, 'race'))
+    percent2 = percent_top_ten(data2, 'race')
     print()
-    print(percent_top_ten(data1, 'justClass'))
+    percent3 = percent_top_ten(data1, 'justClass')
     print()
-    print(percent_top_ten(data2, 'class'))
+    percent4 = percent_top_ten(data2, 'class')
     print()
     data1_copy = data1[['processedRace', 'justClass']].copy()
     data1_copy['class_race'] = (data1_copy['processedRace'] +
                                 data1_copy['justClass'])
-    print(percent_top_ten(data1_copy, 'class_race'))
+    percent5 = percent_top_ten(data1_copy, 'class_race')
     print()
     data2_copy = data2[['race', 'class']].copy()
     data2_copy['class_race'] = (data2_copy['race'] +
                                 data2_copy['class'])
-    print(percent_top_ten(data2_copy, 'class_race'))
+    percent6 = percent_top_ten(data2_copy, 'class_race')
+    chart1 = alt.Chart(percent1).mark_bar().encode(x='processedRace',
+                                                   y='percent')
+    chart2 = alt.Chart(percent3).mark_bar().encode(x='justClass', y='percent')
+    chart3 = alt.Chart(percent5).mark_bar().encode(x='class_race', y='percent')
+    chartapp = chart1 + chart2 + chart3
+    alt.renderers.enable('mimetype')
+    chartapp
+    chart4 = alt.Chart(percent2).mark_bar().encode(x='race', y='percent')
+    chart5 = alt.Chart(percent4).mark_bar().encode(x='class', y='percent')
+    chart6 = alt.Chart(percent6).mark_bar().encode(x='class_race', y='percent')
+    chartsurvey = chart4 + chart5 + chart6
+    chartsurvey
+    chartsurvey.save("chartsurvey.png")
 
     # chart = alt.Chart(percent1).mark_bar().encode(x='processedRace',
     #                                              y='percent')
