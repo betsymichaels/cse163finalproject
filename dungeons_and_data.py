@@ -209,12 +209,12 @@ class DungeonsAndData:
         have to be included in the test/training data
         if no min_frequency is provided, it defaults to 0
         """
-        name_data = self._data[['name', label_type]]
+        name_data = self._data[['name', label_type]].copy()
         name_data = name_data.dropna()
 
         if min_frequency > 0:
             name_data = self._drop_low_frequency(name_data, label_type,
-                                            min_frequency)
+                                                 min_frequency)
 
         self._generate_name_data(name_data)
         name_data = name_data.loc[:, name_data.columns != 'name']
@@ -331,8 +331,7 @@ class DungeonsAndData:
         Takes a list of columns (attributes) and returns
         the most common combination of traits amount those columns
         """
-        data = self._data.copy()
-        data = data.loc[:, atributes]
+        data = self._data.loc[:, atributes]
         data['all'] = data.apply(lambda s: s.str.cat(sep=' '), axis=1)
 
         counts = data['all'].value_counts()
@@ -352,7 +351,6 @@ class DungeonsAndData:
         count_attribute = just_race.groupby(atribute).count()
         top_three = count_attribute.nlargest(3)
 
-        top_three = top_three.to_frame('percent')
         top_three[atribute] = top_three.index
         top_three['percent'] = top_three['percent'] / len(just_race) * 100
         return top_three
